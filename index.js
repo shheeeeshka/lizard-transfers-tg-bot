@@ -40,6 +40,14 @@ app.post("/new-request", async (req, res) => {
     }
 });
 
+app.get("/keep-alive", async (req, res) => {
+    try {
+        return res.send("Alive");
+    } catch (err) {
+        console.error(err);
+    }
+});
+
 async function launchBot() {
     try {
         app.listen(PORT, () => console.log(`Server is currently running on port: ${PORT}`));
@@ -61,6 +69,7 @@ async function launchBot() {
     bot.setMyCommands([
         { command: "/start", description: "Запуск Бота" },
         { command: "/merger", description: "Добавление заявки со стороннего ресурса" },
+        { command: "/whoami", description: "Узнать мой chat Id" },
     ]);
 
     let mergeRequest = false;
@@ -76,7 +85,7 @@ async function launchBot() {
 
         console.log({ chatId });
 
-        if (isBot || chatId !== adminChatId) return;
+        if (isBot || chatId !== adminChatId && !text === "/whoami") return;
 
         if (text?.startsWith("/")) {
             console.log("Starts with /");
@@ -85,6 +94,9 @@ async function launchBot() {
             console.log({ command });
 
             switch (command) {
+                case "/whoami":
+                    await bot.sendMessage(chatId, `Ваш Chat Id : ${chatId}`);
+                    break;
                 case "/start":
                     await bot.sendMessage(chatId, "Здравствуйте! Заявки буду присылать при их появлении.").catch((err) => console.error(err.message));
                     break;
@@ -111,6 +123,7 @@ async function launchBot() {
                     },
                 })
                     .then(async () => {
+                        mergeRequest = false;
                         await bot.sendMessage(chatId, `Запись добавлена в основную таблицу\n\nhttps://docs.google.com/spreadsheets/d/${process.env.SPREADSHEET_ID_MAIN}/edit?gid=0#gid=0`);
                     })
                     .catch((err) => {
